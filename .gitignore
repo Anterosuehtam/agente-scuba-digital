@@ -1,0 +1,23 @@
+# Variáveis de Ambiente e Chaves
+.env
+
+# Ambientes Virtuais Python
+venv/
+.venv/
+env/
+
+# Cache do Python (arquivos compilados locais)
+__pycache__/
+*.pyc
+*.pyo
+
+# Configurações de workspace do VS Code
+.vscode/
+
+# Arquivos de sistema operacional (Windows/Mac)
+Thumbs.db
+.DS_Store
+
+# (Opcional Futuro) Bancos de dados vetoriais locais do LangChain
+chroma_db/
+.faiss/
