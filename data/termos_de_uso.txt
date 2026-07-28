@@ -1,0 +1,24 @@
+TERMOS E CONDIÇÕES DE USO - SCUBA DIGITAL
+Última Atualização: Janeiro de 2026
+
+1. OBJETIVO DO DOCUMENTO
+O presente documento estabelece as condições gerais para abertura, manutenção e encerramento de contas de pagamento no Scuba Digital, instituição de pagamento registrada no Banco Central do Brasil.
+
+2. ABERTURA DE CONTA E CADASTRO
+2.1. O Cliente declara que todas as informações prestadas no momento do cadastro (onboarding) são verdadeiras, exatas e completas.
+2.2. O Scuba Digital reserva-se o direito de recusar a abertura da conta caso sejam identificadas inconsistências ou indícios de fraude durante o processo de Know Your Customer (KYC).
+
+3. RESPONSABILIDADES DO CLIENTE
+3.1. O sigilo da senha de acesso ao aplicativo, bem como do PIN de transação, é de inteira responsabilidade do Cliente. O Scuba Digital nunca solicitará sua senha por telefone, SMS ou e-mail.
+3.2. O Cliente compromete-se a notificar o Scuba Digital imediatamente através dos canais oficiais (chat, telefone 0800-SCUBA) em caso de perda, furto, roubo ou extravio do dispositivo móvel autorizado.
+
+4. TRANSAÇÕES E LIMITES
+4.1. As regras específicas de limites noturnos do PIX estão descritas no FAQ Operacional e seguem a Resolução BCB nº 142.
+4.2. O Scuba Digital poderá bloquear preventivamente transações que apresentem comportamento atípico ou suspeita de fraude, submetendo-as ao setor de Análise de Risco.
+
+5. ENCERRAMENTO DA CONTA
+5.1. A conta poderá ser encerrada pelo Cliente a qualquer momento via aplicativo, desde que não existam pendências financeiras.
+5.2. O Scuba Digital poderá encerrar a conta unilateralmente, com aviso prévio de 30 dias, por desinteresse comercial, ou imediatamente em casos de violação destes termos ou suspeita de lavagem de dinheiro (PLD).
+
+6. FORO
+Fica eleito o foro da Comarca de São Paulo/SP para dirimir quaisquer dúvidas originadas do presente documento.

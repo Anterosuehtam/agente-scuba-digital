@@ -1,0 +1,11 @@
+Servico,Plano_Conta,Valor_BRL,Frequencia,Observacao
+Manutenção de Conta,Varejo,0.00,Mensal,Conta 100% gratuita
+Manutenção de Conta,Plus,19.90,Mensal,Inclui programa de pontos em dobro
+Manutenção de Conta,Scuba PJ,49.90,Mensal,Inclui maquininha e gestão de boletos
+Saque Banco24Horas,Varejo,6.50,Por transação (após 4º saque),4 primeiros saques no mês são gratuitos por regulação do Bacen
+Saque Banco24Horas,Plus / Scuba PJ,0.00,Ilimitado,Saques ilimitados sem custo
+Transferência PIX,Pessoa Física,0.00,Por transação,Isento para CPF
+Transferência PIX,Pessoa Jurídica,0.99,Por transação (após 30 gratuitas/mês),Custo fixo por transação excedente
+Emissão 2ª Via Cartão de Crédito,Todos,25.00,Por solicitação,Isento em caso de roubo comprovado via B.O.
+Avaliação Emergencial de Crédito,Todos,18.90,Por ocorrência mensal,Cobrado apenas se o cliente exceder o limite do cartão e o banco aprovar a compra
+Taxa de Inatividade (Conta sem movimentação > 6 meses),Todos,9.90,Mensal (apenas sobre saldo positivo),Aplicável apenas para contas abandonadas para cobrir custos de manutenção no sistema
