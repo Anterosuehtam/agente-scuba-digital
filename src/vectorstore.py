@@ -1,37 +1,29 @@
 import os
 from dotenv import load_dotenv
-from langchain_google_genai import GoogleGenerativeAIEmbeddings
 from langchain_community.vectorstores import Chroma
+from langchain_cohere import CohereEmbeddings
 from ingestion import carregar_e_processar_documentos
 
-# Carrega as variáveis do arquivo .env (onde estará sua API Key)
 load_dotenv()
 
 def criar_banco_vetorial():
-    print("1. Processando documentos da pasta data/...")
+    print("Iniciando carregamento de documentos...")
     
-    chunks = carregar_e_processar_documentos(diretorio_data="data")
+    diretorio_raiz = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    caminho_data = os.path.join(diretorio_raiz, "data")
     
-    if not chunks:
-        print("Nenhum chunk retornado. Verifique a ingestão.")
-        return None
-
-    print(f"\n2. Inicializando modelo de Embeddings do Google...")
-    # Modelo especializado do Google para transformar texto em vetor
-    embeddings = GoogleGenerativeAIEmbeddings(model="models/gemini-embedding-001")
-
-    print("3. Criando o banco vetorial Chroma e gerando coordenadas (isso pode levar alguns segundos)...")
-    diretorio_db = "chroma_db"
+    documentos = carregar_e_processar_documentos(caminho_data)
     
-    # Leitura dos chunks pelo Chroma, passa pelo modelo de embedding e salva no disco
+    print("Gerando vetores com Cohere (embed-multilingual-v3.0)...")
+    embeddings = CohereEmbeddings(model="embed-multilingual-v3.0")
+    
+    print("Salvando no ChromaDB...")
     vectorstore = Chroma.from_documents(
-        documents=chunks,
+        documents=documentos,
         embedding=embeddings,
-        persist_directory=diretorio_db
+        persist_directory="chroma_db"
     )
-    
-    print(f"\n✅ Banco vetorial criado com sucesso! Dados salvos fisicamente na pasta '{diretorio_db}'.")
-    return vectorstore
+    print("Banco vetorial criado com sucesso!")
 
 if __name__ == "__main__":
     criar_banco_vetorial()
