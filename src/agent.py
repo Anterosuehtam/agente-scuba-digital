@@ -16,7 +16,7 @@ def configurar_agente():
     retriever = vectorstore.as_retriever(search_kwargs={"k": 3})
     
     # 2. Configura o LLM da Cohere (Command)
-    llm = ChatCohere(model="command-a-03-2025", temperature=0.3)
+    llm = ChatCohere(model="command-a-03-2025", temperature=0.1, k_max_tokens=512)
     
     # 3. Criação do Prompt e Correntes (RAG)
     system_prompt = (
