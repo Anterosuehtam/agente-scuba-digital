@@ -13,18 +13,24 @@ def configurar_agente():
     embeddings = CohereEmbeddings(model="embed-multilingual-v3.0")
     vectorstore = Chroma(persist_directory="chroma_db", embedding_function=embeddings)
     
-    retriever = vectorstore.as_retriever(search_kwargs={"k": 3})
+    retriever = vectorstore.as_retriever(
+        search_type="mmr",
+        search_kwargs={"k": 8, "fetch_k": 40}
+    )
     
     # 2. Configura o LLM da Cohere (Command)
-    llm = ChatCohere(model="command-a-03-2025", temperature=0.1, k_max_tokens=512)
+    llm = ChatCohere(model="command-a-03-2025", temperature=0.0, k_max_tokens=512)
     
     # 3. Criação do Prompt e Correntes (RAG)
     system_prompt = (
         "Você é o Snorkel, um agente de IA corporativo do banco Scuba Digital. "
         "Seu objetivo é responder a dúvidas dos colaboradores usando APENAS os documentos internos fornecidos. "
-        "Se a resposta não estiver no contexto fornecido, diga 'Não possuo essa informação nos documentos atuais'. "
-        "Nunca invente regras, tarifas ou prazos. Seja profissional e direto.\n\n"
-        "Contexto recuperado dos documentos:\n{context}"
+        "Siga estas regras rigorosamente:\n"
+        "1. Responda de forma direta e profissional.\n"
+        "2. Se a resposta exigir contato com alguma área (RH, TI, Jurídico), extraia e exiba os e-mails e ramais exatos do documento.\n"
+        "3. Para perguntas fora do escopo bancário ou que não estão nos documentos (ex: receitas, curiosidades, etc), você deve responder EXATAMENTE com a frase: 'Não possuo essa informação nos documentos atuais.' e parar de escrever.\n"
+        "4. Nunca invente informações, dados ou regras.\n\n"
+        "Contexto recuperado:\n{context}"
     )
     
     prompt = ChatPromptTemplate.from_messages([
