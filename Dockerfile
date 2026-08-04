@@ -13,6 +13,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 # 5. Copia o restante do código e os dados para dentro do container
 COPY src/ ./src/
 COPY data/ ./data/
+COPY chroma_db/ ./chroma_db/
 
 # 6. Libera a porta padrão do Streamlit para o mundo exterior
 EXPOSE 8501

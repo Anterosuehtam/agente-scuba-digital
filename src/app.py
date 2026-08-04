@@ -114,7 +114,16 @@ if prompt := st.chat_input("Digite sua dúvida operacional aqui..."):
                 
                 fontes_unicas = []
                 if "context" in resposta_agente:
-                    fontes_unicas = list(set([doc.metadata.get("source", "Documento desconhecido") for doc in resposta_agente["context"]]))
+                    for doc in resposta_agente["context"]:
+                        # Pega o caminho bruto salvo no banco
+                        caminho_bruto = doc.metadata.get("source", "Documento desconhecido")
+                        
+                        # Converte barras do Windows para Linux e extrai só o nome do arquivo
+                        nome_limpo = os.path.basename(caminho_bruto.replace("\\", "/"))
+                        fontes_unicas.append(nome_limpo)
+                    
+                    # Remove duplicatas
+                    fontes_unicas = list(set(fontes_unicas))
                 
                 st.markdown(texto_resposta)
                 
