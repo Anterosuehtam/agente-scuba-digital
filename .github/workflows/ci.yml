@@ -37,7 +37,7 @@ jobs:
 
       - name: Deploy na Instância OCI
         run: |
-          ssh -o StrictHostKeyChecking=no ${{ secrets.OCI_USERNAME }}@${{ secrets.OCI_HOST }} << 'EOF'
+          ssh -o StrictHostKeyChecking=no -o PubkeyAcceptedAlgorithms=+ssh-rsa ${{ secrets.OCI_USERNAME }}@${{ secrets.OCI_HOST }} << 'EOF'
             # Baixa a imagem mais recente
             docker pull anteromath123/agente-snorkel:latest
             
