@@ -1,22 +1,20 @@
-# 1. Define a imagem base do sistema operacional (Python leve)
+# 1. Usa uma imagem oficial do Python, versão leve (slim) para economizar espaço
 FROM python:3.11-slim
 
-# 2. Define o diretório de trabalho dentro do container
+# 2. Define a pasta principal dentro do "computador" do container
 WORKDIR /app
 
-# 3. Copia o arquivo de dependências primeiro (otimiza o cache do Docker)
+# 3. Copia a "receita de bolo" primeiro para aproveitar o cache do Docker
 COPY requirements.txt .
 
-# 4. Instala as bibliotecas necessárias
+# 4. Instala todas as bibliotecas (agora incluindo oci e boto3)
 RUN pip install --no-cache-dir -r requirements.txt
 
-# 5. Copia o restante do código e os dados para dentro do container
-COPY src/ ./src/
-COPY data/ ./data/
-COPY chroma_db/ ./chroma_db/
+# 5. Copia o restante do seu código (pastas src, data, etc.)
+COPY . .
 
-# 6. Libera a porta padrão do Streamlit para o mundo exterior
+# 6. Avisa o Docker que a porta 8501 será usada
 EXPOSE 8501
 
-# 7. Comando definitivo para iniciar a aplicação
+# 7. O comando que liga o servidor, apontando para o app.py dentro de src/
 CMD ["streamlit", "run", "src/app.py", "--server.port=8501", "--server.address=0.0.0.0"]

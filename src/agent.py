@@ -10,14 +10,13 @@ OCID_COHERE = "ocid1.vaultsecret.oc1.sa-saopaulo-1.amaaaaaapd6tuwyaihvn4bsux3pxl
 
 def configurar_agente():
     print("🔐 Resgatando chave da LLM no OCI Vault...")
-    chave_cohere = resgatar_segredo(OCID_COHERE)
 
+    chave_cohere = resgatar_segredo(OCID_COHERE)
+    
     if chave_cohere:
-        # Injeta a chave na memória do sistema durante a execução
         os.environ["COHERE_API_KEY"] = chave_cohere
     else:
-        # Se falhar, o sistema avisa e encerra para não dar erro genérico depois
-        raise ValueError("❌ Erro fatal: Não foi possível acessar a chave da Cohere no cofre.")
+        raise ValueError("❌ O cofre respondeu, mas o segredo veio vazio (None). Verifique se o OCID está correto.")
 
     print("🧠 Inicializando o motor do LangChain...")
 
