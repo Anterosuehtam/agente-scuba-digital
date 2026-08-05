@@ -29,15 +29,14 @@ jobs:
           push: true
           tags: anteromath123/agente-snorkel:latest
 
-      # 4. Acessa a OCI via SSH e atualiza o container (CD) - Método Nativo
-      - name: Configurar Chave SSH
-        uses: webfactory/ssh-agent@v0.9.0
-        with:
-          ssh-private-key: ${{ secrets.OCI_SSH_KEY }}
-
+      # 4. Acessa a OCI via SSH e atualiza o container (CD)
       - name: Deploy na Instância OCI
-        run: |
-          ssh -o StrictHostKeyChecking=no -o PubkeyAcceptedAlgorithms=+ssh-rsa ${{ secrets.OCI_USERNAME }}@${{ secrets.OCI_HOST }} << 'EOF'
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.OCI_HOST }}
+          username: ${{ secrets.OCI_USERNAME }}
+          key: ${{ secrets.OCI_SSH_KEY }}
+          script: |
             # Baixa a imagem mais recente
             docker pull anteromath123/agente-snorkel:latest
             
@@ -47,4 +46,3 @@ jobs:
             
             # Sobe o novo container em segundo plano (-d) com o volume do OCI
             docker run -d --name agente-snorkel -p 8501:8501 -v ~/.oci:/root/.oci anteromath123/agente-snorkel:latest
-          EOF
