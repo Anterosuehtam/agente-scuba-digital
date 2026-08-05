@@ -38,11 +38,11 @@ jobs:
           key: ${{ secrets.OCI_SSH_KEY }}
           script: |
             # Baixa a imagem mais recente
-            docker pull anteromath123/agente-snorkel:latest
+            sudo docker pull anteromath123/agente-snorkel:latest
             
             # Para e remove o container antigo (se existir)
-            docker stop agente-snorkel || true
-            docker rm agente-snorkel || true
+            sudo docker stop agente-snorkel || true
+            sudo docker rm agente-snorkel || true
             
             # Sobe o novo container em segundo plano (-d) com o volume do OCI
-            docker run -d --name agente-snorkel -p 8501:8501 -v ~/.oci:/root/.oci anteromath123/agente-snorkel:latest
+            sudo docker run -d --name agente-snorkel -p 8501:8501 -v ~/.oci:/root/.oci anteromath123/agente-snorkel:latest
