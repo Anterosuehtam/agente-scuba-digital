@@ -1,0 +1,31 @@
+name: CI/CD - Agente Snorkel Docker Build
+
+# 1. Gatilho: Quando a esteira deve rodar?
+on:
+  push:
+    branches:
+      - main # Roda sempre que houver um commit na branch main
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest # Cria um "computador" Linux temporário no GitHub
+
+    steps:
+      # 2. Copia o código do repositório para o Linux temporário
+      - name: Checkout do código
+        uses: actions/checkout@v4
+
+      # 3. Autentica no Docker Hub usando as credenciais configuradas
+      - name: Login no Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      # 4. Faz o build automático (equivalente ao comando docker build) e envia
+      - name: Build e Push da Imagem
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: anteromath123/agente-snorkel:latest
