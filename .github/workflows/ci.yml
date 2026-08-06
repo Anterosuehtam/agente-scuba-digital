@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1. Copia o seu código
+      # 1. Copia o código
       - name: Checkout do código
         uses: actions/checkout@v4
 
