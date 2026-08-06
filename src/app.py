@@ -38,6 +38,24 @@ def calcular_metricas():
     except:
         return 0, 0.0
 
+def obter_resposta_inteligente(rag_chain, mensagem_usuario):
+    """
+    Filtra saudações básicas antes de acionar o custo e o tempo do RAG.
+    """
+    saudacoes = ["olá", "ola", "oi", "tudo bem", "bom dia", "boa tarde", "boa noite", "oi snorkel", "olá snorkel"]
+    mensagem_limpa = mensagem_usuario.lower().strip()
+    
+    # 1. Filtro Heurístico
+    # Se a mensagem começar com uma saudação e for curta
+    if any(mensagem_limpa.startswith(s) for s in saudacoes) and len(mensagem_limpa) < 30:
+        return {
+            "answer": "Olá! Estou aqui para ajudar. Como posso auxiliar com informações sobre os documentos internos do Scuba Digital?",
+            "context": [] # Contexto vazio indica que não consultamos o banco
+        }
+    
+    # 2. Execução Real do RAG (Acionado apenas para perguntas reais)
+    return rag_chain.invoke({"input": mensagem_usuario})
+
 # 1. Configuração da Página
 st.set_page_config(page_title="Agente Snorkel", page_icon="🤿", layout="centered")
 st.title("🤿 Agente Snorkel")
@@ -109,7 +127,8 @@ if prompt := st.chat_input("Digite sua dúvida operacional aqui..."):
     with st.chat_message("assistant", avatar="🤖"):
         with st.spinner("Analisando a base de conhecimento corporativa..."):
             try:
-                resposta_agente = st.session_state.agente.invoke({"input": prompt})
+                resposta_agente = obter_resposta_inteligente(st.session_state.agente, prompt)
+                
                 texto_resposta = resposta_agente["answer"]
                 
                 fontes_unicas = []
