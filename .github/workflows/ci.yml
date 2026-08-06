@@ -47,3 +47,10 @@ jobs:
             
             # Sobe o novo container em segundo plano (-d) com o volume do OCI
             sudo docker run -d --name agente-snorkel -p 8501:8501 -v ~/.oci:/root/.oci anteromath123/agente-snorkel:latest
+
+            # Aguarda 5 segundos para garantir que o container subiu completamente
+            sleep 5
+            
+            # Alimenta o cerebro do agente automaticamente
+            sudo docker exec agente-snorkel python src/sincronizador.py
+            sudo docker exec agente-snorkel python src/ingestion.py
