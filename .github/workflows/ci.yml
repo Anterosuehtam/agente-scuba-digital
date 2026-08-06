@@ -10,8 +10,8 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1. Copia o código
-      - name: Checkout do código
+      # 1. Copia o codigo
+      - name: Checkout do codigo
         uses: actions/checkout@v4
 
       # 2. Autentica no Docker Hub
@@ -30,7 +30,7 @@ jobs:
           tags: anteromath123/agente-snorkel:latest
 
       # 4. Acessa a OCI via SSH e atualiza o container (CD)
-      - name: Deploy na Instância OCI
+      - name: Deploy na Instancia OCI
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.OCI_HOST }}
