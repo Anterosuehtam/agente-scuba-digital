@@ -54,3 +54,5 @@ jobs:
             # Alimenta o cerebro do agente automaticamente
             sudo docker exec agente-snorkel python src/sincronizador.py
             sudo docker exec agente-snorkel python src/ingestion.py
+            # Reinicia para limpar o cache do Streamlit
+            sudo docker restart agente-snorkel
