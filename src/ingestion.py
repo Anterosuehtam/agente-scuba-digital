@@ -6,8 +6,13 @@ from langchain_community.document_loaders import (
     CSVLoader
 )
 from langchain_text_splitters import RecursiveCharacterTextSplitter
+from langchain_community.vectorstores import Chroma
+from langchain_cohere import CohereEmbeddings
+from vault import resgatar_segredo
 
-def carregar_e_processar_documentos(diretorio_data="../data"):
+OCID_COHERE = "ocid1.vaultsecret.oc1.sa-saopaulo-1.amaaaaaapd6tuwyaihvn4bsux3pxlohsuv7ixj2a4n7nnbzswjzpwbvffoea"
+
+def carregar_e_processar_documentos(diretorio_data="data"):
     """
     Lê diferentes formatos de arquivos de um diretório e os divide em chunks.
     """
@@ -35,7 +40,7 @@ def carregar_e_processar_documentos(diretorio_data="../data"):
             else:
                 continue
             
-            # Passo 4: Atribuição de metadados
+            # Passo 2: Atribuição de metadados
             for doc in docs:
                 doc.metadata["nome_arquivo"] = arquivo
                 
@@ -60,10 +65,29 @@ def carregar_e_processar_documentos(diretorio_data="../data"):
     return chunks
 
 if __name__ == "__main__":
-    # Testando o script isoladamente
+    print("🔐 Resgatando chave da LLM no OCI Vault para Ingestão...")
+    chave_cohere = resgatar_segredo(OCID_COHERE)
+    
+    if chave_cohere:
+        os.environ["COHERE_API_KEY"] = chave_cohere
+    else:
+        raise ValueError("❌ O cofre respondeu, mas o segredo veio vazio.")
+
+    # Testando o script e processando os dados
     chunks_finais = carregar_e_processar_documentos(diretorio_data="data")
     
     if chunks_finais:
         print("\n--- Validação do Primeiro Chunk ---")
         print(f"METADADOS: {chunks_finais[0].metadata}")
         print(f"CONTEÚDO:\n{chunks_finais[0].page_content[:300]}...")
+        
+        print("\n💾 Gerando embeddings e salvando documentos no ChromaDB...")
+        embeddings = CohereEmbeddings(model="embed-multilingual-v3.0")
+        
+        # Esta é a linha mágica que estava faltando para criar o banco de verdade!
+        vectorstore = Chroma.from_documents(
+            documents=chunks_finais,
+            embedding=embeddings,
+            persist_directory="chroma_db"
+        )
+        print("✅ Ingestão concluída com sucesso! Banco de dados populado.")
