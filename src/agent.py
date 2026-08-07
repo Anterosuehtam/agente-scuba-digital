@@ -25,8 +25,8 @@ def configurar_agente():
     vectorstore = Chroma(persist_directory="chroma_db", embedding_function=embeddings)
     
     retriever = vectorstore.as_retriever(
-        search_type="mmr",
-        search_kwargs={"k": 8, "fetch_k": 40}
+        search_type="similarity",
+        search_kwargs={"k": 4} 
     )
     
     # Configura o LLM da Cohere (Command)
