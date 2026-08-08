@@ -25,8 +25,11 @@ def configurar_agente():
     vectorstore = Chroma(persist_directory="chroma_db", embedding_function=embeddings)
     
     retriever = vectorstore.as_retriever(
-        search_type="similarity",
-        search_kwargs={"k": 4} 
+        search_type="similarity_score_threshold",
+        search_kwargs={
+            "k": 4, 
+            "score_threshold": 0.5 # Apenas textos com pelo menos 50% de similaridade matemática passam
+        } 
     )
     
     # Configura o LLM da Cohere (Command)
