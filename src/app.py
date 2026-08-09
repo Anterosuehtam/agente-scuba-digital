@@ -130,6 +130,9 @@ if prompt := st.chat_input("Digite sua dúvida operacional aqui..."):
                 resposta_agente = obter_resposta_inteligente(st.session_state.agente, prompt)
                 
                 texto_resposta = resposta_agente["answer"]
+
+                # Conserta o bug do cifrão/LaTeX do Streamlit
+                texto_resposta = texto_resposta.replace("$", "\\$")
                 
                 fontes_unicas = []
                 if "context" in resposta_agente:

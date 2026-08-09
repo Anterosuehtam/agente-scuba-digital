@@ -28,7 +28,7 @@ def configurar_agente():
         search_type="similarity_score_threshold",
         search_kwargs={
             "k": 4, 
-            "score_threshold": 0.5 # Apenas textos com pelo menos 50% de similaridade matemática passam
+            "score_threshold": 0.45 # Apenas textos com pelo menos 45% de similaridade matemática passam
         } 
     )
     
