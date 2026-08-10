@@ -2,9 +2,9 @@ import os
 from vault import resgatar_segredo
 from langchain_community.vectorstores import Chroma
 from langchain_cohere import CohereEmbeddings, ChatCohere
-from langchain_classic.chains import create_retrieval_chain
-from langchain_classic.chains.combine_documents import create_stuff_documents_chain
-from langchain_core.prompts import ChatPromptTemplate
+from langchain.chains import create_retrieval_chain, create_history_aware_retriever
+from langchain.chains.combine_documents import create_stuff_documents_chain
+from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 
 OCID_COHERE = "ocid1.vaultsecret.oc1.sa-saopaulo-1.amaaaaaapd6tuwyaihvn4bsux3pxlohsuv7ixj2a4n7nnbzswjzpwbvffoea"
 
@@ -20,7 +20,7 @@ def configurar_agente():
 
     print("🧠 Inicializando o motor do LangChain...")
 
-    # Conecta ao banco vetorial com embeddings da Cohere
+    # Conecta ao banco vetorial
     embeddings = CohereEmbeddings(model="embed-multilingual-v3.0")
     vectorstore = Chroma(persist_directory="chroma_db", embedding_function=embeddings)
     
@@ -28,14 +28,32 @@ def configurar_agente():
         search_type="similarity_score_threshold",
         search_kwargs={
             "k": 4, 
-            "score_threshold": 0.45 # Apenas textos com pelo menos 45% de similaridade matemática passam
+            "score_threshold": 0.4
         } 
     )
     
-    # Configura o LLM da Cohere (Command)
-    llm = ChatCohere(model="command-a-03-2025", temperature=0.2, k_max_tokens=512)
+    # Configura o LLM da Cohere
+    llm = ChatCohere(model="command-a-03-2025", temperature=0.0, k_max_tokens=512)
     
-    # Criação do Prompt e Correntes (RAG)
+    # Contextualizador
+    contextualize_q_system_prompt = (
+        "Dado o histórico de conversa e a pergunta mais recente do usuário "
+        "que pode fazer referência a um contexto anterior, formule uma pergunta isolada "
+        "que possa ser entendida sem o histórico. NUNCA responda a pergunta, "
+        "apenas reformule-a ou retorne-a como está se não precisar de alterações."
+    )
+    
+    contextualize_q_prompt = ChatPromptTemplate.from_messages([
+        ("system", contextualize_q_system_prompt),
+        MessagesPlaceholder("chat_history"), # Injeta as mensagens antigas aqui
+        ("human", "{input}"),
+    ])
+    
+    history_aware_retriever = create_history_aware_retriever(
+        llm, retriever, contextualize_q_prompt
+    )
+
+    # Prompt Principal Atualizado 
     system_prompt = (
         "Você é o Snorkel, um agente de IA corporativo do banco Scuba Digital. "
         "Seu objetivo é responder a dúvidas operacionais dos colaboradores usando APENAS os documentos internos fornecidos.\n\n"
@@ -48,12 +66,16 @@ def configurar_agente():
         "Contexto recuperado:\n{context}"
     )
     
-    prompt = ChatPromptTemplate.from_messages([
+    # O prompt final também ganha o espaço reservado para a memória
+    qa_prompt = ChatPromptTemplate.from_messages([
         ("system", system_prompt),
+        MessagesPlaceholder("chat_history"),
         ("human", "{input}"),
     ])
     
-    question_answer_chain = create_stuff_documents_chain(llm, prompt)
-    rag_chain = create_retrieval_chain(retriever, question_answer_chain)
+    question_answer_chain = create_stuff_documents_chain(llm, qa_prompt)
+    
+    # Une o reescritor (que busca no banco) com o respondedor final
+    rag_chain = create_retrieval_chain(history_aware_retriever, question_answer_chain)
     
     return rag_chain
