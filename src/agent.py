@@ -2,9 +2,9 @@ import os
 from vault import resgatar_segredo
 from langchain_community.vectorstores import Chroma
 from langchain_cohere import CohereEmbeddings, ChatCohere
-from langchain.chains import create_retrieval_chain, create_history_aware_retriever
-from langchain.chains.combine_documents import create_stuff_documents_chain
-from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
+from langchain.chains import create_retrieval_chain, create_history_aware_retriever # type: ignore
+from langchain.chains.combine_documents import create_stuff_documents_chain # type: ignore
+from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder 
 
 OCID_COHERE = "ocid1.vaultsecret.oc1.sa-saopaulo-1.amaaaaaapd6tuwyaihvn4bsux3pxlohsuv7ixj2a4n7nnbzswjzpwbvffoea"
 
