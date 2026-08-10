@@ -1,13 +1,14 @@
 import streamlit as st
 import json
 import os
+import db
 from agent import configurar_agente
+from langchain_core.messages import HumanMessage, AIMessage
 
 # Arquivo que servirá como nosso "banco de dados" local de métricas
 ARQUIVO_METRICAS = "feedbacks_log.json"
 
 def salvar_feedback(pergunta, resposta, nota):
-    """Salva a interação e a nota (1 para 👍, 0 para 👎) no arquivo JSON"""
     dado = {"pergunta": pergunta, "resposta": resposta, "nota": nota}
     try:
         if os.path.exists(ARQUIVO_METRICAS):
@@ -24,7 +25,6 @@ def salvar_feedback(pergunta, resposta, nota):
         st.sidebar.error(f"Erro ao salvar log: {e}")
 
 def calcular_metricas():
-    """Lê o arquivo JSON e retorna o total de avaliações e a taxa de aprovação"""
     if not os.path.exists(ARQUIVO_METRICAS):
         return 0, 0.0
     try:
@@ -38,23 +38,32 @@ def calcular_metricas():
     except:
         return 0, 0.0
 
-def obter_resposta_inteligente(rag_chain, mensagem_usuario):
+def obter_resposta_inteligente(rag_chain, mensagem_usuario, historico_mensagens):
     """
-    Filtra saudações básicas antes de acionar o custo e o tempo do RAG.
+    Agora a função recebe o histórico e formata para a memória do LangChain.
     """
     saudacoes = ["olá", "ola", "oi", "tudo bem", "bom dia", "boa tarde", "boa noite", "oi snorkel", "olá snorkel"]
     mensagem_limpa = mensagem_usuario.lower().strip()
     
-    # 1. Filtro Heurístico
-    # Se a mensagem começar com uma saudação e for curta
     if any(mensagem_limpa.startswith(s) for s in saudacoes) and len(mensagem_limpa) < 30:
         return {
             "answer": "Olá! Estou aqui para ajudar. Como posso auxiliar com informações sobre os documentos internos do Scuba Digital?",
-            "context": [] # Contexto vazio indica que não consultamos o banco
+            "context": []
         }
     
-    # 2. Execução Real do RAG (Acionado apenas para perguntas reais)
-    return rag_chain.invoke({"input": mensagem_usuario})
+    # Converte as mensagens do SQLite para o formato de objetos que o LangChain exige
+    chat_history = []
+    for msg in historico_mensagens:
+        if msg["role"] == "user":
+            chat_history.append(HumanMessage(content=msg["content"]))
+        elif msg["role"] == "assistant":
+            chat_history.append(AIMessage(content=msg["content"]))
+            
+    # Execução Real do RAG enviando o histórico embutido
+    return rag_chain.invoke({
+        "input": mensagem_usuario,
+        "chat_history": chat_history
+    })
 
 # 1. Configuração da Página
 st.set_page_config(page_title="Agente Snorkel", page_icon="🤿", layout="centered")
@@ -64,36 +73,64 @@ st.caption("🤖 **Aviso:** Sou uma Inteligência Artificial desenvolvida para a
 if "agente" not in st.session_state:
     st.session_state.agente = configurar_agente()
 
-if "messages" not in st.session_state:
-    st.session_state.messages = [
-        {"role": "assistant", "content": "Olá! Como posso ajudar você com suas dúvidas operacionais hoje?", "sources": None, "feedback_registrado": True}
-    ]
+# GERENCIAMENTO DE SESSÕES (CHATS)
+sessoes_existentes = db.listar_sessoes()
 
-# Calcula as métricas antes de renderizar a barra lateral
+# Se não houver nenhuma sessão ativa na memória, pega a última do banco ou cria uma nova
+if "sessao_atual_id" not in st.session_state:
+    if sessoes_existentes:
+        st.session_state.sessao_atual_id = sessoes_existentes[0]["id"]
+    else:
+        st.session_state.sessao_atual_id = db.criar_sessao("Chat 1")
+
+# Garante que as mensagens exibidas na tela pertençam à sessão correta
+if "mensagens_tela" not in st.session_state or st.session_state.get("ultima_sessao_carregada") != st.session_state.sessao_atual_id:
+    mensagens_banco = db.carregar_mensagens(st.session_state.sessao_atual_id)
+    
+    # Se a sessão for nova e estiver vazia, cria a saudação inicial e salva no banco
+    if not mensagens_banco:
+        saudacao = "Olá! Como posso ajudar você com suas dúvidas operacionais hoje?"
+        db.salvar_mensagem(st.session_state.sessao_atual_id, "assistant", saudacao)
+        mensagens_banco = [{"role": "assistant", "content": saudacao}]
+        
+    st.session_state.mensagens_tela = mensagens_banco
+    st.session_state.ultima_sessao_carregada = st.session_state.sessao_atual_id
+# --------------------------------------------------
+
 total_feedbacks, taxa_aprovacao = calcular_metricas()
 
-# Barra Lateral Corporativa
+# 2. Barra Lateral
 with st.sidebar:
     st.header("⚙️ Controle da Sessão")
     if st.button("Nova Conversa", use_container_width=True):
-        st.session_state.messages = [
-            {"role": "assistant", "content": "Olá! Como posso ajudar você com suas dúvidas operacionais hoje?", "sources": None, "feedback_registrado": True}
-        ]
+        # Conta a quantidade de chats para dar um nome sequencial (Ex: Chat 2, Chat 3)
+        qtd_chats = len(db.listar_sessoes()) + 1
+        novo_id = db.criar_sessao(f"Chat {qtd_chats}")
+        st.session_state.sessao_atual_id = novo_id
         st.rerun()
+        
+    st.divider()
+    st.markdown("### 🗂️ Histórico de Conversas")
     
+    # Lista todos os chats salvos no SQLite como botões interativos
+    for sessao in db.listar_sessoes():
+        # Se for o chat atual, o botão fica desativado e ganha uma setinha
+        if sessao["id"] == st.session_state.sessao_atual_id:
+            st.button(f"👉 {sessao['titulo']}", key=sessao["id"], use_container_width=True, disabled=True)
+        else:
+            # Se for um chat antigo, ao clicar, ele troca a sessão e recarrega a página
+            if st.button(f"💬 {sessao['titulo']}", key=sessao["id"], use_container_width=True):
+                st.session_state.sessao_atual_id = sessao["id"]
+                st.rerun()
+                
     st.divider()
     st.markdown("### 📈 Métricas de Aceitação")
     col1, col2 = st.columns(2)
     col1.metric("Avaliações", total_feedbacks)
     col2.metric("Aprovação", f"{taxa_aprovacao:.1f}%")
-    
-    st.divider()
-    st.markdown("### 📊 Infraestrutura")
-    st.markdown("- **Motor LLM:** Cohere (command-a)")
-    st.markdown("- **Banco Vetorial:** ChromaDB")
 
-# Renderiza o histórico
-for i, msg in enumerate(st.session_state.messages):
+# 3. Renderiza o histórico da tela
+for i, msg in enumerate(st.session_state.mensagens_tela):
     with st.chat_message(msg["role"], avatar="🤖" if msg["role"] == "assistant" else "👤"):
         st.markdown(msg["content"])
         
@@ -101,50 +138,48 @@ for i, msg in enumerate(st.session_state.messages):
             with st.expander("🔍 Ver documentos consultados"):
                 for fonte in msg["sources"]:
                     st.markdown(f"- `{fonte}`")
-        
-        # Exibe o botão de feedback apenas para mensagens da IA (excluindo a saudação inicial)
-        # e garante que o usuário só possa avaliar uma vez por resposta
+                    
+        # Exibe o botão de feedback para interações novas
         if msg["role"] == "assistant" and i > 0 and not msg.get("feedback_registrado", False):
-            feedback = st.feedback("thumbs", key=f"feedback_{i}")
+            # Adiciona o ID da sessão na chave do botão para evitar conflitos de cache no Streamlit
+            feedback = st.feedback("thumbs", key=f"feedback_{st.session_state.sessao_atual_id}_{i}")
             
             if feedback is not None:
-                # O Streamlit retorna 1 para polegar para cima e 0 para baixo
-                pergunta_associada = st.session_state.messages[i-1]["content"]
+                pergunta_associada = st.session_state.mensagens_tela[i-1]["content"]
                 salvar_feedback(pergunta_associada, msg["content"], feedback)
-                
-                # Marca no histórico que essa mensagem já foi avaliada para não salvar duplicado no JSON
-                st.session_state.messages[i]["feedback_registrado"] = True
-                
-                # Recarrega a tela para atualizar o painel de métricas na barra lateral
+                st.session_state.mensagens_tela[i]["feedback_registrado"] = True
                 st.rerun()
 
-# Processamento de nova entrada
+# 4. Processamento de nova entrada
 if prompt := st.chat_input("Digite sua dúvida operacional aqui..."):
-    st.session_state.messages.append({"role": "user", "content": prompt})
+    
+    # Grava a pergunta do usuário no banco SQLite primeiro!
+    db.salvar_mensagem(st.session_state.sessao_atual_id, "user", prompt)
+    
+    # Atualiza a tela
+    nova_msg_user = {"role": "user", "content": prompt}
+    st.session_state.mensagens_tela.append(nova_msg_user)
+    
     with st.chat_message("user", avatar="👤"):
         st.markdown(prompt)
 
     with st.chat_message("assistant", avatar="🤖"):
         with st.spinner("Analisando a base de conhecimento corporativa..."):
             try:
-                resposta_agente = obter_resposta_inteligente(st.session_state.agente, prompt)
+                # Isola o histórico (sem a pergunta atual) para enviar à IA
+                historico_para_ia = st.session_state.mensagens_tela[:-1]
+                
+                resposta_agente = obter_resposta_inteligente(st.session_state.agente, prompt, historico_para_ia)
                 
                 texto_resposta = resposta_agente["answer"]
-
-                # Conserta o bug do cifrão/LaTeX do Streamlit
                 texto_resposta = texto_resposta.replace("$", "\\$")
                 
                 fontes_unicas = []
                 if "context" in resposta_agente:
                     for doc in resposta_agente["context"]:
-                        # Pega o caminho bruto salvo no banco
                         caminho_bruto = doc.metadata.get("source", "Documento desconhecido")
-                        
-                        # Converte barras do Windows para Linux e extrai só o nome do arquivo
                         nome_limpo = os.path.basename(caminho_bruto.replace("\\", "/"))
                         fontes_unicas.append(nome_limpo)
-                    
-                    # Remove duplicatas
                     fontes_unicas = list(set(fontes_unicas))
                 
                 st.markdown(texto_resposta)
@@ -154,11 +189,14 @@ if prompt := st.chat_input("Digite sua dúvida operacional aqui..."):
                         for fonte in fontes_unicas:
                             st.markdown(f"- `{fonte}`")
                 
-                st.session_state.messages.append({
+                # Grava a resposta gerada pela IA no banco SQLite
+                db.salvar_mensagem(st.session_state.sessao_atual_id, "assistant", texto_resposta)
+                
+                st.session_state.mensagens_tela.append({
                     "role": "assistant", 
                     "content": texto_resposta,
                     "sources": fontes_unicas,
-                    "feedback_registrado": False # Habilita o botão de feedback para a nova resposta
+                    "feedback_registrado": False 
                 })
                 
                 st.rerun()
