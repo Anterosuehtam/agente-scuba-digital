@@ -38,21 +38,28 @@ jobs:
           username: ${{ secrets.OCI_USERNAME }}
           key: ${{ secrets.OCI_SSH_KEY }}
           script: |
-            # Baixa a imagem mais recente
-            sudo docker pull anteromath123/agente-snorkel:latest
-            
-            # Para e remove o container antigo (se existir)
-            sudo docker stop agente-snorkel || true
-            sudo docker rm agente-snorkel || true
-            
-            # Sobe o novo container em segundo plano (-d) com o volume do OCI
-            sudo docker run -d --name agente-snorkel -p 8501:8501 -v ~/.oci:/root/.oci anteromath123/agente-snorkel:latest
+              sudo docker stop agente-snorkel || true
+              sudo docker rm agente-snorkel || true
+              
+              # Garante que os arquivos físicos existam no servidor da Oracle antes de mapear
+              touch ~/feedbacks_log.json
+              touch ~/historico.db
+              
+              # Baixa a nova versão do código
+              sudo docker pull anteromath123/agente-snorkel:latest
+              
+              # Roda o contêiner com as pontes (Volumes) para o servidor
+              sudo docker run -d --name agente-snorkel -p 8501:8501 \
+                -v ~/.oci:/root/.oci \
+                -v ~/chroma_db:/app/chroma_db \
+                -v ~/feedbacks_log.json:/app/feedbacks_log.json \
+                -v ~/historico.db:/app/historico.db \
+                -v ~/feedbacks_log.json:/app/src/feedbacks_log.json \
+                -v ~/historico.db:/app/src/historico.db \
+                anteromath123/agente-snorkel:latest
 
-            # Aguarda 5 segundos para garantir que o container subiu completamente
-            sleep 5
-            
-            # Alimenta o cerebro do agente automaticamente
-            sudo docker exec agente-snorkel python src/sincronizador.py
-            sudo docker exec agente-snorkel python src/ingestion.py
-            # Reinicia para limpar o cache do Streamlit
-            sudo docker restart agente-snorkel
+              # Opcional: Se você usa o sincronizador/ingestão no deploy, mantenha aqui
+              sleep 5
+              sudo docker exec agente-snorkel python src/sincronizador.py || true
+              sudo docker exec agente-snorkel python src/ingestion.py || true
+              sudo docker restart agente-snorkel
