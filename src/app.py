@@ -11,12 +11,12 @@ ARQUIVO_METRICAS = "feedbacks_log.json"
 def salvar_feedback(pergunta, resposta, nota):
     dado = {"pergunta": pergunta, "resposta": resposta, "nota": nota}
     try:
-        if os.path.exists(ARQUIVO_METRICAS):
+        logs = []
+        # Só tenta ler o JSON se o arquivo existir e não estiver vazio
+        if os.path.exists(ARQUIVO_METRICAS) and os.path.getsize(ARQUIVO_METRICAS) > 0:
             with open(ARQUIVO_METRICAS, "r", encoding="utf-8") as f:
                 logs = json.load(f)
-        else:
-            logs = []
-            
+                
         logs.append(dado)
         
         with open(ARQUIVO_METRICAS, "w", encoding="utf-8") as f:
@@ -25,7 +25,8 @@ def salvar_feedback(pergunta, resposta, nota):
         st.sidebar.error(f"Erro ao salvar log: {e}")
 
 def calcular_metricas():
-    if not os.path.exists(ARQUIVO_METRICAS):
+    # Retorna 0 se o arquivo não existir ou estiver vazio (0 bytes)
+    if not os.path.exists(ARQUIVO_METRICAS) or os.path.getsize(ARQUIVO_METRICAS) == 0:
         return 0, 0.0
     try:
         with open(ARQUIVO_METRICAS, "r", encoding="utf-8") as f:
@@ -114,13 +115,26 @@ with st.sidebar:
     
     # Lista todos os chats salvos no SQLite como botões interativos
     for sessao in db.listar_sessoes():
-        # Se for o chat atual, o botão fica desativado e ganha uma setinha
-        if sessao["id"] == st.session_state.sessao_atual_id:
-            st.button(f"👉 {sessao['titulo']}", key=sessao["id"], use_container_width=True, disabled=True)
-        else:
-            # Se for um chat antigo, ao clicar, ele troca a sessão e recarrega a página
-            if st.button(f"💬 {sessao['titulo']}", key=sessao["id"], use_container_width=True):
-                st.session_state.sessao_atual_id = sessao["id"]
+        # Divide a barra em duas colunas: uma grande pro nome, uma pequena pra lixeira
+        col1, col2 = st.columns([8, 2])
+        
+        with col1:
+            if sessao["id"] == st.session_state.sessao_atual_id:
+                st.button(f"👉 {sessao['titulo']}", key=f"btn_{sessao['id']}", use_container_width=True, disabled=True)
+            else:
+                if st.button(f"💬 {sessao['titulo']}", key=f"btn_{sessao['id']}", use_container_width=True):
+                    st.session_state.sessao_atual_id = sessao["id"]
+                    st.rerun()
+                    
+        with col2:
+            # Botão de apagar
+            if st.button("🗑️", key=f"del_{sessao['id']}", help="Apagar conversa"):
+                db.deletar_sessao(sessao["id"])
+                
+                # Se apagou a sessão que estava aberta na tela, remove da memória para forçar a criação de uma nova
+                if sessao["id"] == st.session_state.sessao_atual_id:
+                    del st.session_state.sessao_atual_id
+                    
                 st.rerun()
                 
     st.divider()
