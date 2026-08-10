@@ -7,7 +7,7 @@ WORKDIR /app
 # 3. Copia a "receita de bolo" primeiro para aproveitar o cache do Docker
 COPY requirements.txt .
 
-# 4. Instala todas as bibliotecas (agora incluindo oci e boto3)
+# 4. Instala todas as bibliotecas
 RUN pip install --no-cache-dir -r requirements.txt
 
 # 5. Copia o restante do seu código (pastas src, data, etc.)
