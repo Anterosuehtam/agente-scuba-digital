@@ -8,11 +8,10 @@ from langchain_core.messages import HumanMessage, AIMessage
 # Arquivo que servirá como nosso "banco de dados" local de métricas
 ARQUIVO_METRICAS = "feedbacks_log.json"
 
-def salvar_feedback(pergunta, resposta, nota):
-    dado = {"pergunta": pergunta, "resposta": resposta, "nota": nota}
+def salvar_feedback(pergunta, resposta, nota, motivo=""):
+    dado = {"pergunta": pergunta, "resposta": resposta, "nota": nota, "motivo": motivo}
     try:
         logs = []
-        # Só tenta ler o JSON se o arquivo existir e não estiver vazio
         if os.path.exists(ARQUIVO_METRICAS) and os.path.getsize(ARQUIVO_METRICAS) > 0:
             with open(ARQUIVO_METRICAS, "r", encoding="utf-8") as f:
                 logs = json.load(f)
@@ -155,14 +154,31 @@ for i, msg in enumerate(st.session_state.mensagens_tela):
                     
         # Exibe o botão de feedback para interações novas
         if msg["role"] == "assistant" and i > 0 and not msg.get("feedback_registrado", False):
-            # Adiciona o ID da sessão na chave do botão para evitar conflitos de cache no Streamlit
-            feedback = st.feedback("thumbs", key=f"feedback_{st.session_state.sessao_atual_id}_{i}")
             
-            if feedback is not None:
-                pergunta_associada = st.session_state.mensagens_tela[i-1]["content"]
-                salvar_feedback(pergunta_associada, msg["content"], feedback)
-                st.session_state.mensagens_tela[i]["feedback_registrado"] = True
-                st.rerun()
+            # Divide o espaço para alinhar os botões customizados lado a lado
+            col_like, col_deslike, col_vazia = st.columns([1, 1, 10])
+            
+            pergunta_associada = st.session_state.mensagens_tela[i-1]["content"]
+            
+            # Lógica do Like
+            with col_like:
+                # Mantemos o ID da sessão na chave para evitar conflitos de cache
+                if st.button("👍", key=f"like_{st.session_state.sessao_atual_id}_{i}"):
+                    salvar_feedback(pergunta_associada, msg["content"], 1)
+                    st.session_state.mensagens_tela[i]["feedback_registrado"] = True
+                    st.toast("Avaliação positiva registrada!")
+                    st.rerun()
+                    
+            # Lógica do Deslike com a caixinha flutuante
+            with col_deslike:
+                with st.popover("👎"):
+                    motivo = st.text_area("O que podemos melhorar nessa resposta?", key=f"txt_{st.session_state.sessao_atual_id}_{i}")
+                    
+                    if st.button("Enviar Feedback", key=f"btn_{st.session_state.sessao_atual_id}_{i}"):
+                        salvar_feedback(pergunta_associada, msg["content"], 0, motivo)
+                        st.session_state.mensagens_tela[i]["feedback_registrado"] = True
+                        st.toast("Feedback enviado com sucesso!")
+                        st.rerun()
 
 # 4. Processamento de nova entrada
 if prompt := st.chat_input("Digite sua dúvida operacional aqui..."):
