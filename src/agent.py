@@ -4,7 +4,7 @@ from langchain_community.vectorstores import Chroma
 from langchain_cohere import CohereEmbeddings, ChatCohere
 from langchain_classic.chains import create_retrieval_chain, create_history_aware_retriever
 from langchain_classic.chains.combine_documents import create_stuff_documents_chain
-from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder 
+from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder, PromptTemplate 
 
 OCID_COHERE = "ocid1.vaultsecret.oc1.sa-saopaulo-1.amaaaaaapd6tuwyaihvn4bsux3pxlohsuv7ixj2a4n7nnbzswjzpwbvffoea"
 
@@ -73,7 +73,18 @@ def configurar_agente():
         ("human", "{input}"),
     ])
     
-    question_answer_chain = create_stuff_documents_chain(llm, qa_prompt)
+    # 1. Cria um mini-template para forçar o LangChain a colar o nome do arquivo junto com o texto
+    document_prompt = PromptTemplate(
+        input_variables=["page_content", "source"],
+        template="[Nome do Arquivo: {source}]\nConteúdo: {page_content}"
+    )
+    
+    # 2. Passa esse template para dentro da corrente
+    question_answer_chain = create_stuff_documents_chain(
+        llm=llm, 
+        prompt=qa_prompt,
+        document_prompt=document_prompt
+    )
     
     # Une o reescritor (que busca no banco) com o respondedor final
     rag_chain = create_retrieval_chain(history_aware_retriever, question_answer_chain)
