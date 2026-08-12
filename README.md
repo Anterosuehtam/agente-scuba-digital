@@ -2,9 +2,9 @@
 
 ## 🎥 Demonstração em Produção
 
-https://github.com/user-attachments/assets/f9b90c4b-bede-48ee-8bf9-e1bdfc846af7
+https://github.com/user-attachments/assets/463170c8-22d7-4dcb-a2c7-e1a7fe84d2ed
 
-*[Espaço reservado para o vídeo da aplicação rodando na nuvem com métricas e histórico]*
+📺 **Prefere assistir com mais detalhes e em velocidade normal?** [Confira o vídeo completo no YouTube](https://youtu.be/k1MS9gGvWyU)
 
 ## 📖 Descrição Geral
 Bem-vindo ao repositório do **Snorkel**, o agente de Inteligência Artificial conversacional desenvolvido para atuar como a base de conhecimento interna do **Scuba Digital**. Utilizando a arquitetura RAG (Retrieval-Augmented Generation), o Snorkel responde a dúvidas de colaboradores com base em documentos institucionais de diferentes departamentos (RH, Financeiro, Operacional e TI), processando de forma inteligente múltiplos formatos de arquivos.
@@ -20,7 +20,7 @@ O sistema foi desenhado para extrair, vetorizar e recuperar informações de for
 * **Linguagem:** Python
 * **Interface e Front-end:** Streamlit
 * **Orquestração de IA:** LangChain
-* **LLM:** Google Gemini
+* **LLM:** Cohere
 * **Banco de Dados:** SQLite (Gestão de Sessões) e JSON (Métricas de Aceitação)
 * **Infraestrutura e Deploy:** Docker, CI/CD (GitHub Actions) e Oracle Cloud Infrastructure (OCI Compute)
 
@@ -47,7 +47,7 @@ A aplicação foi empacotada em contêineres para facilitar a reprodução do am
 
 ## 💡 Exemplos de Uso
 
-Abaixo estão interações reais que demonstram a capacidade do agente de cruzar informações e manter o contexto da conversa:
+Abaixo estão interações reais que demonstram a capacidade do agente de cruzar informações, manter o contexto da conversa e recusar tópicos fora do escopo:
 
 **Exemplo 1: Regras Operacionais e Retenção de Contexto**
 > **👤 Usuário:** Como funciona o limite de PIX noturno para conta PJ?
@@ -59,3 +59,7 @@ Abaixo estão interações reais que demonstram a capacidade do agente de cruzar
 **Exemplo 2: Interpretação de Políticas de Segurança**
 > **👤 Usuário:** O que acontece se houver múltiplas tentativas de senha (PIN) inválidas?
 > **🤖 Snorkel:** De acordo com o documento `politica_seguranca_fraudes.pdf`, o sistema aplicará um **Bloqueio de segurança da conta**. O procedimento para desbloqueio exige o envio de um link seguro via e-mail corporativo cadastrado. Além disso, os atendentes são proibidos de solicitar senhas de acesso.
+
+**Exemplo 3: Tratamento de Fora de Escopo (Fallback)**
+> **👤 Usuário:** Me passe uma receita de bolo de cenoura.
+> **🤖 Snorkel:** Desculpe, mas sou uma inteligência artificial desenvolvida exclusivamente para auxiliar com os documentos normativos e operacionais internos do Scuba Digital. Não encontrei nenhuma informação sobre receitas em nossa base de dados. Como posso ajudar com as suas dúvidas operacionais hoje?
