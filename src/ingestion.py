@@ -1,4 +1,5 @@
 import os
+from dotenv import load_dotenv
 from langchain_community.document_loaders import (
     PyPDFLoader,
     UnstructuredMarkdownLoader,
@@ -8,7 +9,6 @@ from langchain_community.document_loaders import (
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_community.vectorstores import Chroma
 from langchain_cohere import CohereEmbeddings
-from vault import resgatar_segredo
 
 OCID_COHERE = "ocid1.vaultsecret.oc1.sa-saopaulo-1.amaaaaaapd6tuwyaihvn4bsux3pxlohsuv7ixj2a4n7nnbzswjzpwbvffoea"
 
@@ -64,14 +64,29 @@ def carregar_e_processar_documentos(diretorio_data="data"):
     
     return chunks
 
+
 if __name__ == "__main__":
-    print("🔐 Resgatando chave da LLM no OCI Vault para Ingestão...")
-    chave_cohere = resgatar_segredo(OCID_COHERE)
+    print("🔍 Verificando credenciais de acesso...")
+    
+    # Carrega as variáveis do arquivo .env local (se ele existir)
+    load_dotenv()
+    
+    # Tenta resgatar a chave localmente
+    chave_cohere = os.getenv("COHERE_API_KEY")
     
     if chave_cohere:
-        os.environ["COHERE_API_KEY"] = chave_cohere
+        print("✅ Chave do Cohere carregada localmente via arquivo .env!")
     else:
-        raise ValueError("❌ O cofre respondeu, mas o segredo veio vazio.")
+        print("☁️ Chave local não encontrada. Tentando resgatar do OCI Vault...")
+        # Importamos o vault apenas se precisarmos dele, evitando crash no Windows
+        from vault import resgatar_segredo
+        chave_cohere = resgatar_segredo(OCID_COHERE)
+        
+        if chave_cohere:
+            os.environ["COHERE_API_KEY"] = chave_cohere
+            print("✅ Chave do Cohere carregada com sucesso do OCI Vault!")
+        else:
+            raise ValueError("❌ O cofre respondeu, mas o segredo veio vazio.")
 
     # Testando o script e processando os dados
     chunks_finais = carregar_e_processar_documentos(diretorio_data="data")
@@ -84,7 +99,6 @@ if __name__ == "__main__":
         print("\n💾 Gerando embeddings e salvando documentos no ChromaDB...")
         embeddings = CohereEmbeddings(model="embed-multilingual-v3.0")
         
-        # Esta é a linha mágica que estava faltando para criar o banco de verdade!
         vectorstore = Chroma.from_documents(
             documents=chunks_finais,
             embedding=embeddings,

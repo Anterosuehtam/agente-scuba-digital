@@ -1,5 +1,5 @@
 import os
-from vault import resgatar_segredo
+from dotenv import load_dotenv
 from langchain_community.vectorstores import Chroma
 from langchain_cohere import CohereEmbeddings, ChatCohere
 from langchain_classic.chains import create_retrieval_chain, create_history_aware_retriever
@@ -9,14 +9,27 @@ from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder, Prom
 OCID_COHERE = "ocid1.vaultsecret.oc1.sa-saopaulo-1.amaaaaaapd6tuwyaihvn4bsux3pxlohsuv7ixj2a4n7nnbzswjzpwbvffoea"
 
 def configurar_agente():
-    print("🔐 Resgatando chave da LLM no OCI Vault...")
+    print("🔍 Verificando credenciais de acesso para o Agente...")
 
-    chave_cohere = resgatar_segredo(OCID_COHERE)
+    # Carrega as variáveis do arquivo .env local (se ele existir)
+    load_dotenv()
+    
+    # Tenta resgatar a chave localmente
+    chave_cohere = os.getenv("COHERE_API_KEY")
     
     if chave_cohere:
-        os.environ["COHERE_API_KEY"] = chave_cohere
+        print("✅ Chave do Cohere carregada localmente via arquivo .env!")
     else:
-        raise ValueError("❌ O cofre respondeu, mas o segredo veio vazio (None). Verifique se o OCID está correto.")
+        print("☁️ Chave local não encontrada. Tentando resgatar do OCI Vault...")
+        # Importamos o vault apenas se precisarmos dele, evitando crash no Windows
+        from vault import resgatar_segredo
+        chave_cohere = resgatar_segredo(OCID_COHERE)
+        
+        if chave_cohere:
+            os.environ["COHERE_API_KEY"] = chave_cohere
+            print("✅ Chave do Cohere carregada com sucesso do OCI Vault!")
+        else:
+            raise ValueError("❌ O cofre respondeu, mas o segredo veio vazio (None). Verifique se o OCID está correto.")
 
     print("🧠 Inicializando o motor do LangChain...")
 
