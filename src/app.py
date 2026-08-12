@@ -208,18 +208,6 @@ for i, msg in enumerate(st.session_state.mensagens_tela):
                     motivo = st.text_area("O que podemos melhorar nessa resposta?", key=f"txt_{st.session_state.sessao_atual_id}_{i}")
                     
                     if st.button("Enviar Feedback", key=f"btn_{st.session_state.sessao_atual_id}_{i}"):
-                        # Salva nota 0, o motivo digitado, e a "impressão digital" da mensagem
-                        salvar_feedback(pergunta_associada, msg["content"], 0, motivo, st.session_state.sessao_atual_id, i)
-                        st.session_state.mensagens_tela[i]["feedback_registrado"] = True
-                        st.toast("Feedback enviado com sucesso!")
-                        st.rerun()
-                    
-            # Lógica do Deslike com a caixinha flutuante
-            with col_deslike:
-                with st.popover("👎"):
-                    motivo = st.text_area("O que podemos melhorar nessa resposta?", key=f"txt_{st.session_state.sessao_atual_id}_{i}")
-                    
-                    if st.button("Enviar Feedback", key=f"btn_{st.session_state.sessao_atual_id}_{i}"):
                         salvar_feedback(pergunta_associada, msg["content"], 0, motivo)
                         st.session_state.mensagens_tela[i]["feedback_registrado"] = True
                         st.toast("Feedback enviado com sucesso!")

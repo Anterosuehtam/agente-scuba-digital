@@ -20,4 +20,8 @@ Thumbs.db
 
 # (Opcional Futuro) Bancos de dados vetoriais locais do LangChain
 chroma_db/
+historico.db
 .faiss/
+
+#Arquivo de log
+feedbacks_log.json
