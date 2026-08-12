@@ -8,8 +8,15 @@ from langchain_core.messages import HumanMessage, AIMessage
 # Arquivo que servirá como nosso "banco de dados" local de métricas
 ARQUIVO_METRICAS = "feedbacks_log.json"
 
-def salvar_feedback(pergunta, resposta, nota, motivo=""):
-    dado = {"pergunta": pergunta, "resposta": resposta, "nota": nota, "motivo": motivo}
+def salvar_feedback(pergunta, resposta, nota, motivo="", sessao_id=None, msg_index=None):
+    dado = {
+        "pergunta": pergunta, 
+        "resposta": resposta, 
+        "nota": nota, 
+        "motivo": motivo,
+        "sessao_id": sessao_id,
+        "msg_index": msg_index
+    }
     try:
         logs = []
         if os.path.exists(ARQUIVO_METRICAS) and os.path.getsize(ARQUIVO_METRICAS) > 0:
@@ -37,6 +44,22 @@ def calcular_metricas():
             return total, taxa
     except:
         return 0, 0.0
+
+def obter_interacoes_avaliadas():
+    # Retorna um conjunto (set) com a dupla (sessao_id, msg_index)
+    avaliadas = set()
+    if os.path.exists(ARQUIVO_METRICAS) and os.path.getsize(ARQUIVO_METRICAS) > 0:
+        try:
+            with open(ARQUIVO_METRICAS, "r", encoding="utf-8") as f:
+                logs = json.load(f)
+                for log in logs:
+                    s_id = log.get("sessao_id")
+                    m_idx = log.get("msg_index")
+                    if s_id is not None and m_idx is not None:
+                        avaliadas.add((s_id, m_idx))
+        except:
+            pass
+    return avaliadas
 
 def obter_resposta_inteligente(rag_chain, mensagem_usuario, historico_mensagens):
     """
@@ -142,6 +165,9 @@ with st.sidebar:
     col1.metric("Avaliações", total_feedbacks)
     col2.metric("Aprovação", f"{taxa_aprovacao:.1f}%")
 
+# Carrega as avaliações do disco rígido uma única vez antes de montar o chat
+interacoes_avaliadas = obter_interacoes_avaliadas()
+
 # 3. Renderiza o histórico da tela
 for i, msg in enumerate(st.session_state.mensagens_tela):
     with st.chat_message(msg["role"], avatar="🤖" if msg["role"] == "assistant" else "👤"):
@@ -152,22 +178,41 @@ for i, msg in enumerate(st.session_state.mensagens_tela):
                 for fonte in msg["sources"]:
                     st.markdown(f"- `{fonte}`")
                     
-        # Exibe o botão de feedback para interações novas
-        if msg["role"] == "assistant" and i > 0 and not msg.get("feedback_registrado", False):
+        # Identifica a pergunta exata que gerou esta resposta
+        pergunta_associada = ""
+        if msg["role"] == "assistant" and i > 0:
+            pergunta_associada = st.session_state.mensagens_tela[i-1]["content"]
+                    
+        # A MÁGICA CORRIGIDA: Verifica se ESTA exata mensagem NESTE exato chat já foi avaliada
+        ja_avaliada = msg.get("feedback_registrado", False) or (st.session_state.sessao_atual_id, i) in interacoes_avaliadas
+
+        # Exibe os botões de feedback APENAS se a interação ainda não foi avaliada
+        if msg["role"] == "assistant" and i > 0 and not ja_avaliada:
             
             # Divide o espaço para alinhar os botões customizados lado a lado
             col_like, col_deslike, col_vazia = st.columns([1, 1, 10])
-            
-            pergunta_associada = st.session_state.mensagens_tela[i-1]["content"]
             
             # Lógica do Like
             with col_like:
                 # Mantemos o ID da sessão na chave para evitar conflitos de cache
                 if st.button("👍", key=f"like_{st.session_state.sessao_atual_id}_{i}"):
-                    salvar_feedback(pergunta_associada, msg["content"], 1)
+                    # Salva nota 1, motivo vazio (""), e a "impressão digital" da mensagem
+                    salvar_feedback(pergunta_associada, msg["content"], 1, "", st.session_state.sessao_atual_id, i)
                     st.session_state.mensagens_tela[i]["feedback_registrado"] = True
                     st.toast("Avaliação positiva registrada!")
                     st.rerun()
+                    
+            # Lógica do Deslike com a caixinha flutuante
+            with col_deslike:
+                with st.popover("👎"):
+                    motivo = st.text_area("O que podemos melhorar nessa resposta?", key=f"txt_{st.session_state.sessao_atual_id}_{i}")
+                    
+                    if st.button("Enviar Feedback", key=f"btn_{st.session_state.sessao_atual_id}_{i}"):
+                        # Salva nota 0, o motivo digitado, e a "impressão digital" da mensagem
+                        salvar_feedback(pergunta_associada, msg["content"], 0, motivo, st.session_state.sessao_atual_id, i)
+                        st.session_state.mensagens_tela[i]["feedback_registrado"] = True
+                        st.toast("Feedback enviado com sucesso!")
+                        st.rerun()
                     
             # Lógica do Deslike com a caixinha flutuante
             with col_deslike:
