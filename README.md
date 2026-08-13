@@ -6,6 +6,11 @@ https://github.com/user-attachments/assets/463170c8-22d7-4dcb-a2c7-e1a7fe84d2ed
 
 📺 **Prefere assistir com mais detalhes e em velocidade normal?** [Confira o vídeo completo no YouTube](https://youtu.be/k1MS9gGvWyU)
 
+## ▶️ Teste ao Vivo
+
+A aplicação está hospedada e rodando em produção na nuvem (Oracle Cloud Infrastructure). 
+**[👉 Clique aqui para conversar com o Agente Snorkel](http://136.248.107.155:8501/)**
+
 ## 📖 Descrição Geral
 Bem-vindo ao repositório do **Snorkel**, o agente de Inteligência Artificial conversacional desenvolvido para atuar como a base de conhecimento interna do **Scuba Digital**. Utilizando a arquitetura RAG (Retrieval-Augmented Generation), o Snorkel responde a dúvidas de colaboradores com base em documentos institucionais de diferentes departamentos (RH, Financeiro, Operacional e TI), processando de forma inteligente múltiplos formatos de arquivos.
 
